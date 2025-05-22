@@ -1,47 +1,64 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
-const mockScores = [
-  { dimension: '构图排版', score: 4.5 },
-  { dimension: '色彩系统', score: 4.0 },
-  { dimension: '字体风格', score: 3.5 },
-  { dimension: '人物素材', score: 4.2 },
-  { dimension: '字数控制', score: 2.8 },
-  { dimension: '安全风控', score: 5.0 },
-];
-
-const explanations = {
-  '构图排版': '构图清晰，信息分布合理，有良好视觉引导。',
-  '色彩系统': '色彩搭配和谐，主次分明。',
-  '字体风格': '字体基本匹配，略有小瑕疵。',
-  '人物素材': '人物清晰，风格统一。',
-  '字数控制': '文字略多，建议适当精简。',
-  '安全风控': '无水印，无敏感元素。'
-};
-
 function App() {
+  const [file, setFile] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const res = await fetch('/api/score', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    setResult(data);
+    setLoading(false);
+  };
+
   return (
-    <div className="p-6 space-y-6 font-sans max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold">🎯 视觉评分系统 Demo</h1>
-      <div className="p-4 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-2">📊 雷达评分图</h2>
-        <RadarChart outerRadius={90} width={500} height={300} data={mockScores.map(s => ({ ...s, fullMark: 5 }))}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="dimension" />
-          <PolarRadiusAxis angle={30} domain={[0, 5]} />
-          <Radar name="得分" dataKey="score" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.6} />
-        </RadarChart>
-      </div>
-      {mockScores.map((item, idx) => (
-        <div key={idx} className="bg-white p-4 rounded shadow">
-          <div className="flex justify-between">
-            <h3 className="text-base font-semibold">{item.dimension}</h3>
-            <span className="text-blue-500 font-medium">{item.score.toFixed(1)} 分</span>
+    <div className="p-6 max-w-3xl mx-auto space-y-6 font-sans">
+      <h1 className="text-2xl font-bold">🎯 GPT视觉评分小工具</h1>
+
+      <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} />
+      <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleUpload}>
+        提交评分
+      </button>
+
+      {loading && <p className="text-gray-500">正在分析中，请稍候...</p>}
+
+      {result && (
+        <>
+          <RadarChart outerRadius={90} width={500} height={300} data={
+            Object.entries(result.评分).map(([dimension, score]) => ({
+              dimension,
+              score,
+              fullMark: 5
+            }))
+          }>
+            <PolarGrid />
+            <PolarAngleAxis dataKey="dimension" />
+            <PolarRadiusAxis angle={30} domain={[0, 5]} />
+            <Radar name="得分" dataKey="score" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+          </RadarChart>
+
+          <div className="space-y-4">
+            {Object.entries(result.点评).map(([key, value]) => (
+              <div key={key} className="bg-white p-4 rounded shadow">
+                <h3 className="text-lg font-semibold">{key}</h3>
+                <p className="text-sm text-gray-700">{value}</p>
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-gray-600 mt-1">{explanations[item.dimension]}</p>
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 }
