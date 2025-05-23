@@ -1,5 +1,5 @@
 {
-  "name": "ai-score-gpt",
+  "name": "ai-score-full",
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
