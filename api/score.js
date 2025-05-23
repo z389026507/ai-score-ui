@@ -32,4 +32,4 @@ export default async function handler(req, res) {
     } catch {
       res.status(500).json({ error: "GPT返回格式错误", raw: chat.choices[0].message.content });
     }
-}
+});
